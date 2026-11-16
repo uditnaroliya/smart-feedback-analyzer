@@ -1,0 +1,599 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart Feedback Analyzer - NLP Based Sentiment Analysis System using VADER">
+    <title>Smart Feedback Analyzer — NLP Based Sentiment Analysis</title>
+
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" rel="stylesheet">
+    <!-- Google Font -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <style>
+        :root {
+            --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            --positive-color: #10b981;
+            --negative-color: #ef4444;
+            --neutral-color: #f59e0b;
+            --card-shadow: 0 4px 24px rgba(0, 0, 0, 0.08);
+            --card-hover-shadow: 0 8px 32px rgba(0, 0, 0, 0.12);
+        }
+
+        * {
+            font-family: 'Inter', sans-serif;
+        }
+
+        body {
+            background: #f0f2f5;
+            min-height: 100vh;
+        }
+
+        /* ─── Navbar ────────────────────────────────────────── */
+        .navbar-custom {
+            background: var(--primary-gradient);
+            padding: 1rem 0;
+            box-shadow: 0 2px 16px rgba(102, 126, 234, 0.3);
+        }
+        .navbar-custom .navbar-brand {
+            color: #fff;
+            font-weight: 700;
+            font-size: 1.3rem;
+            letter-spacing: -0.02em;
+        }
+        .navbar-custom .navbar-brand i {
+            margin-right: 0.5rem;
+        }
+
+        /* ─── Dashboard Stats Cards ────────────────────────── */
+        .stat-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            overflow: hidden;
+        }
+        .stat-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--card-hover-shadow);
+        }
+        .stat-card .card-body {
+            padding: 1.5rem;
+        }
+        .stat-icon {
+            width: 52px;
+            height: 52px;
+            border-radius: 14px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.5rem;
+        }
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.85rem;
+            color: #6b7280;
+            font-weight: 500;
+        }
+
+        .bg-total    { background: rgba(102, 126, 234, 0.12); color: #667eea; }
+        .bg-positive { background: rgba(16, 185, 129, 0.12);  color: #10b981; }
+        .bg-negative { background: rgba(239, 68, 68, 0.12);   color: #ef4444; }
+        .bg-neutral  { background: rgba(245, 158, 11, 0.12);  color: #f59e0b; }
+
+        .text-total    { color: #667eea; }
+        .text-positive { color: var(--positive-color); }
+        .text-negative { color: var(--negative-color); }
+        .text-neutral  { color: var(--neutral-color); }
+
+        /* ─── Main Cards ───────────────────────────────────── */
+        .main-card {
+            border: none;
+            border-radius: 16px;
+            box-shadow: var(--card-shadow);
+        }
+        .main-card .card-header {
+            background: transparent;
+            border-bottom: 1px solid #e5e7eb;
+            padding: 1.25rem 1.5rem;
+            font-weight: 600;
+            font-size: 1.05rem;
+        }
+        .main-card .card-body {
+            padding: 1.5rem;
+        }
+
+        /* ─── Feedback Textarea ────────────────────────────── */
+        .feedback-textarea {
+            border: 2px solid #e5e7eb;
+            border-radius: 12px;
+            padding: 1rem;
+            font-size: 1rem;
+            resize: vertical;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            min-height: 140px;
+        }
+        .feedback-textarea:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.15);
+        }
+
+        /* ─── Buttons ──────────────────────────────────────── */
+        .btn-analyze {
+            background: var(--primary-gradient);
+            border: none;
+            color: #fff;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+        .btn-analyze:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(102, 126, 234, 0.35);
+            color: #fff;
+        }
+        .btn-clear {
+            border: 2px solid #d1d5db;
+            color: #6b7280;
+            padding: 0.75rem 2rem;
+            border-radius: 12px;
+            font-weight: 600;
+            font-size: 1rem;
+            background: #fff;
+            transition: all 0.15s ease;
+        }
+        .btn-clear:hover {
+            border-color: #9ca3af;
+            color: #374151;
+            background: #f9fafb;
+        }
+
+        /* ─── Result Card ──────────────────────────────────── */
+        .result-card {
+            border: none;
+            border-radius: 16px;
+            padding: 2rem;
+            text-align: center;
+            animation: fadeInUp 0.5s ease;
+        }
+        .result-card.positive {
+            background: linear-gradient(135deg, #d1fae5, #a7f3d0);
+            border-left: 6px solid var(--positive-color);
+        }
+        .result-card.negative {
+            background: linear-gradient(135deg, #fee2e2, #fecaca);
+            border-left: 6px solid var(--negative-color);
+        }
+        .result-card.neutral {
+            background: linear-gradient(135deg, #fef3c7, #fde68a);
+            border-left: 6px solid var(--neutral-color);
+        }
+        .result-emoji {
+            font-size: 3.5rem;
+            margin-bottom: 0.5rem;
+        }
+        .result-sentiment {
+            font-size: 1.75rem;
+            font-weight: 700;
+        }
+        .result-score {
+            font-size: 1.1rem;
+            font-weight: 500;
+            opacity: 0.8;
+        }
+        .result-message {
+            font-size: 1rem;
+            margin-top: 0.75rem;
+            opacity: 0.85;
+        }
+
+        @keyframes fadeInUp {
+            from {
+                opacity: 0;
+                transform: translateY(16px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        /* ─── History Table ────────────────────────────────── */
+        .history-table th {
+            font-weight: 600;
+            font-size: 0.85rem;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+            color: #6b7280;
+            border-bottom: 2px solid #e5e7eb;
+        }
+        .history-table td {
+            vertical-align: middle;
+            font-size: 0.95rem;
+        }
+        .badge-positive {
+            background: var(--positive-color);
+            color: #fff;
+            padding: 0.4em 0.8em;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .badge-negative {
+            background: var(--negative-color);
+            color: #fff;
+            padding: 0.4em 0.8em;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .badge-neutral {
+            background: var(--neutral-color);
+            color: #fff;
+            padding: 0.4em 0.8em;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 0.8rem;
+        }
+        .btn-delete {
+            border: none;
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+            border-radius: 8px;
+            padding: 0.35rem 0.65rem;
+            transition: all 0.15s ease;
+        }
+        .btn-delete:hover {
+            background: #ef4444;
+            color: #fff;
+        }
+
+        /* ─── Footer ───────────────────────────────────────── */
+        .footer {
+            background: #1f2937;
+            color: #9ca3af;
+            padding: 1.5rem 0;
+            margin-top: 3rem;
+        }
+        .footer a {
+            color: #a78bfa;
+            text-decoration: none;
+        }
+
+        /* ─── Toast / Messages ─────────────────────────────── */
+        .alert {
+            border: none;
+            border-radius: 12px;
+            font-weight: 500;
+        }
+
+        /* ─── Responsive Tweaks ────────────────────────────── */
+        @media (max-width: 768px) {
+            .stat-number { font-size: 1.5rem; }
+            .result-emoji { font-size: 2.5rem; }
+            .result-sentiment { font-size: 1.3rem; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ═══════════════ NAVBAR ═══════════════ -->
+    <nav class="navbar navbar-custom">
+        <div class="container">
+            <span class="navbar-brand">
+                <i class="bi bi-chat-dots-fill"></i>
+                Smart Feedback Analyzer
+            </span>
+            <span class="text-white opacity-75" style="font-size: 0.9rem;">
+                <i class="bi bi-cpu"></i> NLP Based Sentiment Analysis
+            </span>
+        </div>
+    </nav>
+
+    <!-- ═══════════════ MAIN CONTENT ═══════════════ -->
+    <div class="container py-4">
+
+        <!-- ── Django Messages ── -->
+        {% if messages %}
+        <div class="row mb-3">
+            <div class="col-12">
+                {% for message in messages %}
+                <div class="alert alert-{{ message.tags }} alert-dismissible fade show" role="alert">
+                    <i class="bi {% if message.tags == 'success' %}bi-check-circle-fill{% elif message.tags == 'warning' %}bi-exclamation-triangle-fill{% elif message.tags == 'info' %}bi-info-circle-fill{% else %}bi-x-circle-fill{% endif %} me-2"></i>
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- ── Hero Section ── -->
+        <div class="text-center mb-4">
+            <h1 class="fw-bold" style="font-size: 2rem; background: var(--primary-gradient); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">
+                Smart Feedback Analyzer
+            </h1>
+            <p class="text-muted mb-0" style="max-width: 600px; margin: 0 auto;">
+                Enter your feedback below and our NLP-powered engine will instantly analyze the sentiment
+                using VADER Sentiment Analysis.
+            </p>
+        </div>
+
+        <!-- ══════════════ DASHBOARD STATISTICS ══════════════ -->
+        <div class="row g-3 mb-4">
+            <!-- Total -->
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stat-icon bg-total">
+                                <i class="bi bi-bar-chart-fill"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number text-total">{{ total_count }}</div>
+                        <div class="stat-label">Total Feedback</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Positive -->
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stat-icon bg-positive">
+                                <i class="bi bi-emoji-smile-fill"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number text-positive">{{ positive_count }}</div>
+                        <div class="stat-label">Positive</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Negative -->
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stat-icon bg-negative">
+                                <i class="bi bi-emoji-frown-fill"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number text-negative">{{ negative_count }}</div>
+                        <div class="stat-label">Negative</div>
+                    </div>
+                </div>
+            </div>
+            <!-- Neutral -->
+            <div class="col-6 col-lg-3">
+                <div class="card stat-card h-100">
+                    <div class="card-body">
+                        <div class="d-flex align-items-center mb-3">
+                            <div class="stat-icon bg-neutral">
+                                <i class="bi bi-emoji-neutral-fill"></i>
+                            </div>
+                        </div>
+                        <div class="stat-number text-neutral">{{ neutral_count }}</div>
+                        <div class="stat-label">Neutral</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="row g-4">
+
+            <!-- ══════════════ FEEDBACK FORM ══════════════ -->
+            <div class="col-lg-6">
+                <div class="card main-card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-pencil-square me-2 text-primary"></i>
+                        Enter Your Feedback
+                    </div>
+                    <div class="card-body">
+                        <form method="POST" action="{% url 'home' %}">
+                            {% csrf_token %}
+                            <div class="mb-3">
+                                <textarea
+                                    name="feedback_text"
+                                    id="feedbackText"
+                                    class="form-control feedback-textarea"
+                                    placeholder="Type your feedback here... (e.g., 'The product quality is excellent and delivery was fast!')"
+                                    rows="6"
+                                >{{ request.POST.feedback_text|default:"" }}</textarea>
+                            </div>
+                            <div class="d-flex gap-2">
+                                <button type="submit" class="btn btn-analyze flex-fill">
+                                    <i class="bi bi-search me-2"></i>Analyze Feedback
+                                </button>
+                                <button type="button" class="btn btn-clear" onclick="clearFeedback()">
+                                    <i class="bi bi-arrow-counterclockwise me-1"></i>Clear
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ══════════════ RESULT DISPLAY ══════════════ -->
+            <div class="col-lg-6">
+                <div class="card main-card h-100">
+                    <div class="card-header">
+                        <i class="bi bi-graph-up-arrow me-2 text-primary"></i>
+                        Analysis Result
+                    </div>
+                    <div class="card-body d-flex align-items-center justify-content-center">
+                        {% if result %}
+                            <!-- Show sentiment result -->
+                            <div class="result-card w-100
+                                {% if result.sentiment == 'Positive' %}positive
+                                {% elif result.sentiment == 'Negative' %}negative
+                                {% else %}neutral{% endif %}">
+
+                                <div class="result-emoji">
+                                    {% if result.sentiment == 'Positive' %}😊
+                                    {% elif result.sentiment == 'Negative' %}😞
+                                    {% else %}😐{% endif %}
+                                </div>
+
+                                <div class="result-sentiment
+                                    {% if result.sentiment == 'Positive' %}text-positive
+                                    {% elif result.sentiment == 'Negative' %}text-negative
+                                    {% else %}text-neutral{% endif %}">
+                                    {{ result.sentiment }} Sentiment
+                                </div>
+
+                                <div class="result-score mt-2">
+                                    <i class="bi bi-speedometer2 me-1"></i>
+                                    Compound Score: <strong>{{ result.compound_score }}</strong>
+                                </div>
+
+                                <div class="result-message mt-2">
+                                    {% if result.sentiment == 'Positive' %}
+                                        <i class="bi bi-star-fill me-1"></i>
+                                        Great! The feedback reflects a positive experience.
+                                    {% elif result.sentiment == 'Negative' %}
+                                        <i class="bi bi-exclamation-circle-fill me-1"></i>
+                                        The feedback indicates a negative experience. Attention may be needed.
+                                    {% else %}
+                                        <i class="bi bi-dash-circle-fill me-1"></i>
+                                        The feedback is neutral — no strong positive or negative sentiment detected.
+                                    {% endif %}
+                                </div>
+
+                                <!-- Detailed Scores -->
+                                <div class="mt-3 pt-3" style="border-top: 1px solid rgba(0,0,0,0.1);">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <small class="d-block text-muted">Positive</small>
+                                            <strong class="text-positive">{{ result.scores.pos }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="d-block text-muted">Neutral</small>
+                                            <strong class="text-neutral">{{ result.scores.neu }}</strong>
+                                        </div>
+                                        <div class="col-4">
+                                            <small class="d-block text-muted">Negative</small>
+                                            <strong class="text-negative">{{ result.scores.neg }}</strong>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        {% else %}
+                            <!-- Placeholder when no result -->
+                            <div class="text-center text-muted py-4">
+                                <i class="bi bi-chat-left-text" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="mt-3 mb-0">Enter feedback and click <strong>Analyze</strong> to see the sentiment result here.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- ══════════════ FEEDBACK HISTORY ══════════════ -->
+        <div class="card main-card mt-4">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <span>
+                    <i class="bi bi-clock-history me-2 text-primary"></i>
+                    Feedback History
+                </span>
+                <span class="badge rounded-pill" style="background: var(--primary-gradient);">
+                    {{ total_count }} record{{ total_count|pluralize }}
+                </span>
+            </div>
+            <div class="card-body p-0">
+                {% if history %}
+                <div class="table-responsive">
+                    <table class="table table-hover history-table mb-0">
+                        <thead>
+                            <tr>
+                                <th style="width: 5%;">#</th>
+                                <th style="width: 45%;">Feedback</th>
+                                <th style="width: 13%;">Sentiment</th>
+                                <th style="width: 12%;">Score</th>
+                                <th style="width: 17%;">Date & Time</th>
+                                <th style="width: 8%;">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for fb in history %}
+                            <tr>
+                                <td class="text-muted">{{ forloop.counter }}</td>
+                                <td>
+                                    <span title="{{ fb.feedback_text }}">
+                                        {{ fb.feedback_text|truncatewords:15 }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <span class="badge-{{ fb.sentiment|lower }}">
+                                        {% if fb.sentiment == 'Positive' %}
+                                            <i class="bi bi-emoji-smile me-1"></i>
+                                        {% elif fb.sentiment == 'Negative' %}
+                                            <i class="bi bi-emoji-frown me-1"></i>
+                                        {% else %}
+                                            <i class="bi bi-emoji-neutral me-1"></i>
+                                        {% endif %}
+                                        {{ fb.sentiment }}
+                                    </span>
+                                </td>
+                                <td>
+                                    <code>{{ fb.compound_score }}</code>
+                                </td>
+                                <td class="text-muted" style="font-size: 0.85rem;">
+                                    {{ fb.created_at|date:"d M Y, h:i A" }}
+                                </td>
+                                <td>
+                                    <a href="{% url 'delete_feedback' fb.pk %}"
+                                       class="btn btn-delete btn-sm"
+                                       title="Delete this record"
+                                       onclick="return confirm('Are you sure you want to delete this feedback?');">
+                                        <i class="bi bi-trash3"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="text-center text-muted py-5">
+                    <i class="bi bi-inbox" style="font-size: 2.5rem; opacity: 0.3;"></i>
+                    <p class="mt-2 mb-0">No feedback analyzed yet. Start by entering your first feedback above!</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+
+    </div><!-- /container -->
+
+    <!-- ═══════════════ FOOTER ═══════════════ -->
+    <footer class="footer text-center">
+        <div class="container">
+            <p class="mb-1">
+                <i class="bi bi-chat-dots-fill me-1"></i>
+                <strong>Smart Feedback Analyzer</strong> — NLP Based Sentiment Analysis System
+            </p>
+            <small>Built with Django &amp; VADER Sentiment Analysis</small>
+        </div>
+    </footer>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+        // Clear the feedback textarea
+        function clearFeedback() {
+            document.getElementById('feedbackText').value = '';
+            document.getElementById('feedbackText').focus();
+        }
+    </script>
+</body>
+</html>
